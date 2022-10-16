@@ -1,0 +1,99 @@
+.sidenav {
+    height: 100%;
+    width: 200px;
+    z-index: 1000;
+    position: fixed;
+    padding: 10px;
+    background-color: #eef3f4;
+}
+
+.userinfo {
+    text-align: center;
+}
+
+.wrapper {
+    position: relative;
+
+}
+
+section {
+    margin-left: 200px;
+}
+
+.topbar {
+    height: auto;
+    width: 100%;
+    padding: 5px;
+    background-color: #bdbfc0;
+}
+
+
+.main_contents {
+    padding: 10px;
+}
+
+.navitems {
+    margin-left: 5px;
+}
+
+.navitems:hover a {
+    background-color: #95ccdf;
+    color: #0f525f;
+
+}
+
+.navitems i {}
+
+.navitems:hover i {
+
+    color: #5b53aa;
+    animation: swing 1.5s;
+
+}
+
+@keyframes swing {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    10% {
+        transform: rotate(10deg);
+    }
+
+    30% {
+        transform: rotate(0deg);
+    }
+
+    40% {
+        transform: rotate(-10deg);
+    }
+
+    50% {
+        transform: rotate(0deg);
+    }
+
+    60% {
+        transform: rotate(5deg);
+    }
+
+    70% {
+        transform: rotate(0deg);
+    }
+
+    80% {
+        transform: rotate(-5deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+#myacc {
+    position: absolute;
+    right: 10px;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+}
