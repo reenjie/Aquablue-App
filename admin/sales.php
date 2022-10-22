@@ -2,7 +2,11 @@
 session_start();
 include '../connection/connect.php';
 include_once ('../includes/Order.php');
+include_once ('../includes/Sales.php');
+include_once('../includes/Users.php');
 $order = new Order();
+$sales = new Sales();
+$user = new Users();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,8 +23,8 @@ $order = new Order();
   </div>
   <a href="myaccount.php" id="myacc" >Account</a>
 </nav>
-<br>
-<br>
+<!-- <br>
+<br> -->
 
 
 <?php include 'components/sidebar.php'; ?>
@@ -152,79 +156,76 @@ $order = new Order();
     <?php 
     date_default_timezone_set('Asia/Manila'); 
     $datenow = date('Y-m-d');
-          $getorders = " select * from trans_record where  date_ordered BETWEEN '$d1' AND '$d2' and  transaction_id in (select tid from transaction where status ='3') ";
-                      $gettingor = mysqli_query($con,$getorders); 
-                      $countorders= mysqli_num_rows($gettingor);
-                     //  $get_id =  mysqli_insert_id($con); 
-                   if ($countorders>=1){
+        
+          $fetchorder = $sales->ShowallOrdersSorted($con,$d1,$d2);
+          if($fetchorder){
+          
+             foreach ($fetchorder as $row) {
+               $tid = $row['tid'];
+               $status = $row['status'];
+               $uid = $row['user_id'];   
+
+
+               $fetchuser = $user ->fetchuser($con,$uid);
+               foreach ($fetchuser as $usern) {
+                 ?>  
+                 <tr colspan="5" class="table-primary"><td >
+                 <h6>Order#<?php echo $row['tid']?>  </h6>
+                 </td></tr>
+               
+                   <td  class=" text-success"><?php echo $usern['name']?> 
+                   <br>
+                   Date-Ordered: <?php echo date('F j,Y',strtotime($row['datecreated']))?>
+                
+               
+                 </td>
+                 
+               
+     
+                 <?php
+               }
+ 
+              
+               $fetchitems = $sales->ShowItems($con,$tid);
+               if($fetchitems){
+                 foreach($fetchitems as $items){
                   
-                       while($row = mysqli_fetch_array($gettingor)){
-                        $user = $row['user_id'];
-                        $pid = $row['prod_id'];
-                        $qty = $row['quantity'];
-                        $query = "Select * from product where prod_id = '$pid' ";
-                        $result12 = mysqli_query($con,$query);
-                        while($total = mysqli_fetch_array($result12)){
-                         $price = $total['price'];
-                      
+                  $prodid = $items['prod_id'];
+
+                  $fetchproduct = $order -> selectproduct($con,$prodid);
+                      foreach ($fetchproduct as $pr) {
+                          $qty = $items['quantity'];
+                          $price = $pr['price'];
+                        
+                          $itotal = $price * $qty;
+  
+                          ?>
+  
+                          <tr>
+                        <td></td>
+                          <td><?php echo $items['quantity']?></td>
+                          <td><?php echo $pr['name']?></td>
+                          <td>&#8369;<?php echo number_format($pr['price'])?></td>
+                          <td>&#8369;<?php echo number_format($itotal)?></td>
+                          <td style="color:gray;font-weight:bold">&#8369;<?php echo number_format($itotal)?></td>
+                          </tr>
                          
-                        }
-                    
-                        $totals = $qty * $price;
-                      ?>
-                       <tr>
-                    <th scope="row"><?php echo ''.$row['order_id'] ?></th>
-                    <td><?php echo date('F j,Y',strtotime($row['date_ordered'])) ?></td>
-                    <td><?php
-                        $gettingusername = " select * from accounts where user_id = '$user'  ";
-                                    $guser = mysqli_query($con,$gettingusername); 
-                                  
-                                
-                                     while($ue = mysqli_fetch_array($guser)){
-                                      echo $ue['name'];
-                                     }
-                              
-                     ?></td>
-                    <td>
-                      <?php 
-                          $gettingproduct = " select * from product where prod_id = '$pid' ";
-                                      $gprod = mysqli_query($con,$gettingproduct); 
-                                   
-                                  
-                                       while($pp = mysqli_fetch_array($gprod)){
-                                        echo $pp['name'];
-                                       }
-                                
-                       ?>
-                    </td>
-                    <td><?php echo $row['quantity'] ?></td>
-                      
-                     <td>₱<?php echo number_format($totals)?></td>
-                  </tr>
+  
+                        <?php
+  
+                      }
 
-                  <tr>
+                 }
 
-                      <?php
-                       }
 
-                       ?>
 
-                    
-                          
-                          
-                  
-                       <?php
-                }else {
-                  ?>
+             }
 
-                  <tr>
-                    <td colspan="7"> <h6 style="text-align: center;font-weight: bolder;">No orders yet..</h6></td>
-                  </tr>
+            }
+          }
 
-                  <?php
-                }
 
-     ?>
+          ?>
    
       
       
@@ -243,95 +244,86 @@ $order = new Order();
   <thead>
     <tr>
       <th scope="col">Order_no</th>
-      <th scope="col">Date-Ordered</th>
-      <th scope="col">Name</th>
+      <th scope="col">Qty</th>
       <th scope="col">Product</th>
-       <th scope="col">Qty</th>
-      
+      <th scope="col">Price</th>
+      <th scope="col">SubTotal</th>
         <th scope="col">Amount Paid</th>
     </tr>
   </thead>
   <tbody>
-    <?php 
-    date_default_timezone_set('Asia/Manila'); 
-    $datenow = date('Y-m-d');
-          $getorders = " select * from trans_record where date_ordered = '$datenow' and transaction_id in (select tid from transaction where status ='3')  ";
-                      $gettingor = mysqli_query($con,$getorders); 
-                      $countorders= mysqli_num_rows($gettingor);
-                     //  $get_id =  mysqli_insert_id($con); 
-                   if ($countorders>=1){
+<!-- Today -->
+<?php  
+$token = '';
+            $fetchorder = $sales->ShowallOrders($con,$token);
+            if($fetchorder){
+            
+               foreach ($fetchorder as $row) {
+                 $tid = $row['tid'];
+                 $status = $row['status'];
+                 $uid = $row['user_id'];   
+
+
+                 $fetchuser = $user ->fetchuser($con,$uid);
+                 foreach ($fetchuser as $usern) {
+                   ?>  
+                   <tr colspan="5" class="table-primary"><td >
+                   <h6>Order#<?php echo $row['tid']?>  </h6>
+                   </td></tr>
+                 
+                     <td  class=" text-success"><?php echo $usern['name']?> 
+                     <br>
+                     Date-Ordered: <?php echo date('F j,Y',strtotime($row['datecreated']))?>
                   
-                       while($row = mysqli_fetch_array($gettingor)){
-                        $user = $row['user_id'];
-                        $pid = $row['prod_id'];
-                        $qty = $row['quantity'];
-                        $query = "Select * from product where prod_id = '$pid' ";
-                     
-                        $result12 = mysqli_query($con,$query);
-                        while($total = mysqli_fetch_array($result12)){
-                         $price = $total['price'];
+                 
+                   </td>
+                   
+                 
+       
+                   <?php
+                 }
+   
+                
+                 $fetchitems = $sales->ShowItems($con,$tid);
+                 if($fetchitems){
+                   foreach($fetchitems as $items){
+                    
+                    $prodid = $items['prod_id'];
+
+                    $fetchproduct = $order -> selectproduct($con,$prodid);
+                        foreach ($fetchproduct as $pr) {
+                            $qty = $items['quantity'];
+                            $price = $pr['price'];
                           
-                       
+                            $itotal = $price * $qty;
+    
+                            ?>
+    
+                            <tr>
+                          <td></td>
+                            <td><?php echo $items['quantity']?></td>
+                            <td><?php echo $pr['name']?></td>
+                            <td>&#8369;<?php echo number_format($pr['price'])?></td>
+                            <td>&#8369;<?php echo number_format($itotal)?></td>
+                            <td style="color:gray;font-weight:bold">&#8369;<?php echo number_format($itotal)?></td>
+                            </tr>
+                           
+    
+                          <?php
+    
                         }
-                        $totals = $qty * $price;
-                                           
-                      ?>
-                       <tr>
-                    <th scope="row"><?php echo ''.$row['order_id'] ?></th>
-                    <td><?php echo date('F j,Y',strtotime($row['date_ordered'])) ?></td>
-                    <td><?php
-                        $gettingusername = " select * from accounts where user_id = '$user'  ";
-                                    $guser = mysqli_query($con,$gettingusername); 
-                                  
-                                
-                                     while($ue = mysqli_fetch_array($guser)){
-                                      echo $ue['name'];
-                                     }
-                              
-                     ?></td>
-                    <td>
-                      <?php 
-                          $gettingproduct = " select * from product where prod_id = '$pid' ";
-                        $gprod = mysqli_query($con,$gettingproduct); 
-                                   
-                                  
-                                       while($pp = mysqli_fetch_array($gprod)){
-                                        echo $pp['name'];
-                                       }
-                                
-                       ?>
-                    </td>
-                    <td><?php echo $row['quantity'] ?></td>
-                       
-                     <td>₱<?php echo number_format($totals) ?></td>
-                  </tr>
 
-                  <tr>
+                   }
 
-                      <?php
-                       }
 
-                       ?>
 
-                         
-                          
-                     
-                       <?php
-                }else {
-                  ?>
+               }
 
-                  <tr>
-                    <td colspan="7"> <h6 style="text-align: center;font-weight: bolder;">No orders yet..</h6></td>
-                  </tr>
+              }
+            }
 
-                  <?php
-                }
+?>
 
-     ?>
-   
-      
-      
-   
   </tbody>
 </table>
 </div> 
